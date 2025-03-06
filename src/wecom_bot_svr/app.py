@@ -1,6 +1,7 @@
 import inspect
 import logging
 import os
+# noinspection PyPep8Naming
 import xml.etree.cElementTree as ET
 
 import requests
@@ -30,8 +31,9 @@ def _encode_rsp(wx_cpt, rsp_str):
     return rsp
 
 
+# noinspection PyBroadException
 class WecomBotServer(object):
-    def __init__(self, name, host, port, path, token=None, aes_key=None, corp_id=None, bot_key=None,
+    def __init__(self, name, host, port, path, token=None, aes_key=None, corp_id=None, bot_key=None, intranet=False,
                  active_msg_path="/active_send"):
         """
         :param name:
@@ -47,6 +49,7 @@ class WecomBotServer(object):
         self.host = host
         self.port = port
         self.path = path
+        self.webhook_url = f"{'http://in.' if intranet else 'https://'}qyapi.weixin.qq.com/cgi-bin/webhook"
         self.active_msg_path = active_msg_path
         self._bot_key = bot_key if bot_key is not None else os.getenv("WX_BOT_KEY")
         self._token = token if token is not None else os.getenv("WX_BOT_TOKEN")
@@ -174,7 +177,7 @@ class WecomBotServer(object):
             with open(file_path, 'rb') as file:
                 files = {'file': (filename, file)}
                 response = requests.post(
-                    url=f'https://qyapi.weixin.qq.com/cgi-bin/webhook/upload_media?key={self._bot_key}&type=file',
+                    url=f'{self.webhook_url}/upload_media?key={self._bot_key}&type=file',
                     files=files)
                 # 检查响应
                 if response.status_code != 200 and response.json().get("errcode") == 0:
@@ -192,7 +195,7 @@ class WecomBotServer(object):
             }
             payload.update(msg_data)
 
-            r = requests.post(url=f'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={self._bot_key}',
+            r = requests.post(url=f'{self.webhook_url}/send?key={self._bot_key}',
                               json=payload)
             if r.status_code == 200 and r.json().get("errcode") == 0:
                 return f"发送{msg_type_name}成功"
