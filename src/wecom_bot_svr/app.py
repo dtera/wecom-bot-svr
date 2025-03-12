@@ -41,17 +41,8 @@ def load_conf_from_json(json_file="config.json"):
     return conf
 
 
-if importlib.util.find_spec("config") is not None:
-    c_module = importlib.import_module("config")
-    if hasattr(c_module, "wecom_bot_name"):
-        _import_name = getattr(c_module, "wecom_bot_name")
-    else:
-        conf = load_conf_from_json()
-        _import_name = conf["wecom_bot_name"] if "wecom_bot_name" in conf else __name__
-else:
-    conf = load_conf_from_json()
-    _import_name = conf["wecom_bot_name"] if "wecom_bot_name" in conf else __name__
-web: Flask = Flask(_import_name)
+conf = load_conf_from_json()
+web: Flask = Flask(conf["wecom_bot_name"] if "wecom_bot_name" in conf else __name__)
 
 
 # noinspection PyBroadException
