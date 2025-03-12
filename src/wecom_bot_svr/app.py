@@ -1,4 +1,6 @@
+import importlib
 import inspect
+import json
 import logging
 import os
 # noinspection PyPep8Naming
@@ -31,6 +33,27 @@ def _encode_rsp(wx_cpt, rsp_str):
     return rsp
 
 
+def load_conf_from_json(json_file="config.json"):
+    conf = {}
+    if os.path.exists(json_file):
+        with open(json_file) as f:
+            conf = json.load(f)
+    return conf
+
+
+if importlib.util.find_spec("config") is not None:
+    c_module = importlib.import_module("config")
+    if hasattr(c_module, "wecom_bot_name"):
+        _import_name = getattr(c_module, "wecom_bot_name")
+    else:
+        conf = load_conf_from_json()
+        _import_name = conf["wecom_bot_name"] if "wecom_bot_name" in conf else __name__
+else:
+    conf = load_conf_from_json()
+    _import_name = conf["wecom_bot_name"] if "wecom_bot_name" in conf else __name__
+web: Flask = Flask(_import_name)
+
+
 # noinspection PyBroadException
 class WecomBotServer(object):
     def __init__(self, name, host, port, path, token=None, aes_key=None, corp_id=None, bot_key=None, intranet=False,
@@ -55,7 +78,7 @@ class WecomBotServer(object):
         self._token = token if token is not None else os.getenv("WX_BOT_TOKEN")
         self._aes_key = aes_key if aes_key is not None else os.getenv("WX_BOT_AES_KEY")
         self._corp_id = corp_id if corp_id is not None else os.getenv("WX_BOT_CORP_ID", default="")
-        self._app = Flask(name)
+        self._app = web
         self._message_handler = None
         self._event_handler = None
         self._error_handler = None
